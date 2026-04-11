@@ -742,13 +742,13 @@ line-height: 2.2;
 <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
   <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#5a6478;margin-right:4px">Загрузить с сервера</div>
   <button class="btn btn-ghost" id="serverBtn1" onclick="loadServerCSV(1,this)" style="font-size:12px;padding:8px 18px;display:flex;align-items:center;gap:7px">
-    <span style="width:8px;height:8px;border-radius:50%;background:#00e5a0;display:inline-block"></span>CSV 1
+    <span style="width:8px;height:8px;border-radius:50%;background:#00e5a0;display:inline-block"></span>STM 2
   </button>
   <button class="btn btn-ghost" id="serverBtn2" onclick="loadServerCSV(2,this)" style="font-size:12px;padding:8px 18px;display:flex;align-items:center;gap:7px">
-    <span style="width:8px;height:8px;border-radius:50%;background:#00b8ff;display:inline-block"></span>CSV 2
+    <span style="width:8px;height:8px;border-radius:50%;background:#00b8ff;display:inline-block"></span>STM 1
   </button>
   <button class="btn btn-ghost" id="serverBtn3" onclick="loadServerCSV(3,this)" style="font-size:12px;padding:8px 18px;display:flex;align-items:center;gap:7px">
-    <span style="width:8px;height:8px;border-radius:50%;background:#ffb700;display:inline-block"></span>CSV 3
+    <span style="width:8px;height:8px;border-radius:50%;background:#ffb700;display:inline-block"></span>UMO
   </button>
   <div id="serverLoadStatus" style="font-family:'Space Mono','Courier New',monospace;font-size:11px;color:#5a6478"></div>
 </div>
@@ -1585,7 +1585,7 @@ function renderCryptoBoxes(rows) {
 
 // ── Server CSV loader ──────────────────────────────────────────────────────
 var SERVER_CSV_URLS = {
-  1: '/crs.csv',
+  1: 'crs.csv',
   2: '/crsi.csv',
   3: '/umo.csv'
 };
