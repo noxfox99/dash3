@@ -1314,9 +1314,12 @@ function groupByKey(rows, keyFn) {
   var map={},order=[];
   for (var i=0;i<rows.length;i++) {
     var k=keyFn(rows[i].date);
-    if (!map[k]) { map[k]={key:k,amount:0,count:0,byMethod:{}}; order.push(k); }
+    if (!map[k]) { map[k]={key:k,amount:0,count:0,byMethod:{},btc:0,ltc:0,usdt_usd:0,btcN:0,ltcN:0,usdtN:0}; order.push(k); }
     map[k].amount+=rows[i].amount; map[k].count++;
     map[k].byMethod[rows[i].method]=(map[k].byMethod[rows[i].method]||0)+rows[i].amount;
+    if (rows[i].btc)      { map[k].btc      += rows[i].btc;      map[k].btcN++;  }
+    if (rows[i].ltc)      { map[k].ltc      += rows[i].ltc;      map[k].ltcN++;  }
+    if (rows[i].usdt_usd) { map[k].usdt_usd += rows[i].usdt_usd; map[k].usdtN++; }
   }
   order.sort();
   return order.map(function(k){ return map[k]; });
@@ -1331,10 +1334,13 @@ function methodColorMap(methods) {
 function renderAnalytics() {
   var filtered = filterByPeriod(incomeData);
   var groups   = analyticsView==='month' ? groupByKey(filtered,getMonthKey) : analyticsView==='week' ? groupByKey(filtered,getWeekKey) : groupByKey(filtered,getDayKey);
+  // Update globals immediately so renderIncomeTable can use them
+  analyticsGroups = groups;
+  analyticsColMap = methodColorMap(allMethods(filtered));
   var mGroups  = groupByKey(filtered,getMonthKey);
   var wGroups  = groupByKey(filtered,getWeekKey);
   var methods  = allMethods(filtered);
-  var colMap   = methodColorMap(methods);
+  var colMap   = analyticsColMap;
 
   var total=0; for (var i=0;i<filtered.length;i++) total+=filtered[i].amount;
 
@@ -1398,26 +1404,54 @@ function switchAnalyticsView(view, el) {
 }
 
 // ── Drill-down ─────────────────────────────────────────────────────────────
+function openDrillByIndex(idx) {
+  var group = analyticsGroups[idx];
+  if (!group) return;
+  openDrill(group, analyticsColMap);
+}
+
 function openDrill(group, colMap) {
   var methods=Object.keys(group.byMethod).sort();
   var panel=document.getElementById('drillPanel');
   var title=analyticsView==='month' ? fmtMonthKey(group.key) : analyticsView==='week' ? fmtWeekKey(group.key) : fmtDayKey(group.key);
-  document.getElementById('drillTitle').textContent = title+' — по методам оплаты';
+  document.getElementById('drillTitle').textContent = title+' — разбивка по методам и крипто';
+
+  // Method cards
   var html='';
   for (var i=0;i<methods.length;i++) {
     var m=methods[i]; var amt=group.byMethod[m]; var col=colMap[m]||'#5a6478';
     var pct=group.amount>0?(amt/group.amount*100):0;
-    html+='<div style="background:#080b10;border:1px solid '+col+'33;border-radius:10px;padding:12px 18px;min-width:140px;flex:1">'
+    html+='<div style="background:#080b10;border:1px solid '+col+'33;border-radius:10px;padding:12px 18px;min-width:130px;flex:1">'
       +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
       +'<div style="width:8px;height:8px;border-radius:50%;background:'+col+'"></div>'
       +'<span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#5a6478">'+m+'</span></div>'
-      +'<div style="font-family:Courier New,monospace;font-size:20px;font-weight:700;color:'+col+'">'
-      +'₽'+amt.toFixed(2)+'</div>'
+      +'<div style="font-family:Courier New,monospace;font-size:20px;font-weight:700;color:'+col+'">₽'+amt.toFixed(2)+'</div>'
       +'<div style="margin-top:8px;height:4px;background:#1e2530;border-radius:2px;overflow:hidden">'
       +'<div style="width:'+pct.toFixed(1)+'%;height:100%;background:'+col+';border-radius:2px"></div></div>'
       +'<div style="font-family:Courier New,monospace;font-size:10px;color:#5a6478;margin-top:4px">'+pct.toFixed(1)+'% от периода</div>'
       +'</div>';
   }
+
+  // Crypto cards — BTC, LTC, USDT (shown only if > 0)
+  var cryptoAssets = [
+    { key:'btc',      label:'BTC',  col:'#f7931a', val:group.btc,      n:group.btcN  },
+    { key:'ltc',      label:'LTC',  col:'#345d9d', val:group.ltc,      n:group.ltcN  },
+    { key:'usdt_usd', label:'USDT', col:'#26a17b', val:group.usdt_usd, n:group.usdtN }
+  ];
+  for (var j=0;j<cryptoAssets.length;j++) {
+    var a=cryptoAssets[j];
+    if (!a.val) continue;
+    var fmtVal = '$'+(a.val>=1000?(a.val/1000).toFixed(2)+'k':a.val.toFixed(2));
+    var txLbl  = a.n+' '+(a.n===1?'транзакция':a.n>=2&&a.n<=4?'транзакции':'транзакций');
+    html+='<div style="background:#080b10;border:1px solid '+a.col+'44;border-radius:10px;padding:12px 18px;min-width:130px;flex:1">'
+      +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
+      +'<div style="width:8px;height:8px;border-radius:50%;background:'+a.col+'"></div>'
+      +'<span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#5a6478">'+a.label+' (USD)</span></div>'
+      +'<div style="font-family:Courier New,monospace;font-size:20px;font-weight:700;color:'+a.col+'">'+fmtVal+'</div>'
+      +'<div style="font-family:Courier New,monospace;font-size:10px;color:#5a6478;margin-top:6px">'+txLbl+'</div>'
+      +'</div>';
+  }
+
   document.getElementById('drillCards').innerHTML=html;
   panel.style.display='block';
   panel.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -1526,7 +1560,7 @@ function renderIncomeTable(groups, total, colMap) {
 
     var clickable = analyticsView==='week' || analyticsView==='day';
     var rowStyle  = clickable ? 'cursor:pointer' : '';
-    var rowClick  = clickable ? 'onclick="openDrill(analyticsGroups['+i+'], analyticsColMap)"' : '';
+    var rowClick  = clickable ? 'onclick="openDrillByIndex('+i+')"' : '';
 
     rows+='<tr style="'+rowStyle+'" '+rowClick+'>'
       +'<td style="padding:12px 18px;color:#5a6478">'+(i+1)+'</td>'
@@ -1546,14 +1580,7 @@ function renderIncomeTable(groups, total, colMap) {
 var analyticsGroups=[];
 var analyticsColMap={};
 
-var _origRender=renderAnalytics;
-renderAnalytics=function(){
-  var filtered=filterByPeriod(incomeData);
-  var methods=allMethods(filtered);
-  analyticsColMap=methodColorMap(methods);
-  analyticsGroups=analyticsView==='month'?groupByKey(filtered,getMonthKey):analyticsView==='week'?groupByKey(filtered,getWeekKey):groupByKey(filtered,getDayKey);
-  _origRender();
-};
+// analyticsGroups and analyticsColMap are now set inside renderAnalytics directly
 
 window.addEventListener('resize',function(){
   if(incomeData.length) drawBarChart(analyticsGroups);
