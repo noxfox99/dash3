@@ -1561,33 +1561,53 @@ window.addEventListener('resize',function(){
 
 // ── Crypto asset boxes ─────────────────────────────────────────────────────
 function renderCryptoBoxes(rows) {
-  var btcTotal=0, ltcTotal=0, usdtTotal=0;
-  var btcCount=0, ltcCount=0, usdtCount=0;
+  // Group by current view (day/week/month) and sum crypto per group
+  var keyFn = analyticsView==='month' ? getMonthKey : analyticsView==='week' ? getWeekKey : getDayKey;
+  var map={}, order=[];
   for (var i=0;i<rows.length;i++) {
-    if (rows[i].btc)      { btcTotal  += rows[i].btc;      btcCount++;  }
-    if (rows[i].ltc)      { ltcTotal  += rows[i].ltc;      ltcCount++;  }
-    if (rows[i].usdt_usd) { usdtTotal += rows[i].usdt_usd; usdtCount++; }
+    var k=keyFn(rows[i].date);
+    if (!map[k]) { map[k]={btc:0,ltc:0,usdt:0,btcN:0,ltcN:0,usdtN:0}; order.push(k); }
+    if (rows[i].btc)      { map[k].btc  +=rows[i].btc;      map[k].btcN++;  }
+    if (rows[i].ltc)      { map[k].ltc  +=rows[i].ltc;      map[k].ltcN++;  }
+    if (rows[i].usdt_usd) { map[k].usdt +=rows[i].usdt_usd; map[k].usdtN++; }
   }
+
+  // Totals across all groups in current period
+  var btcTotal=0, ltcTotal=0, usdtTotal=0, btcCount=0, ltcCount=0, usdtCount=0;
+  for (var i=0;i<order.length;i++) {
+    btcTotal  +=map[order[i]].btc;  btcCount  +=map[order[i]].btcN;
+    ltcTotal  +=map[order[i]].ltc;  ltcCount  +=map[order[i]].ltcN;
+    usdtTotal +=map[order[i]].usdt; usdtCount +=map[order[i]].usdtN;
+  }
+
   var hasCrypto = btcTotal>0 || ltcTotal>0 || usdtTotal>0;
   document.getElementById('cryptoBar').style.display = hasCrypto ? 'block' : 'none';
   if (!hasCrypto) return;
 
+  var periodLabel = analyticsView==='month' ? 'за месяц' : analyticsView==='week' ? 'за неделю' : 'за день';
   function fmt(v) { return '$'+(v>=1000?(v/1000).toFixed(2)+'k':v.toFixed(2)); }
-  function txLabel(n) { return n+' '+(n===1?'транзакция':n>1&&n<5?'транзакции':'транзакций'); }
+  function txLabel(n) { return n+' '+(n===1?'транзакция':n>=2&&n<=4?'транзакции':'транзакций')+' '+periodLabel; }
 
-  document.getElementById('cryptoBTC').textContent   = fmt(btcTotal);
+  // Update crypto label to reflect current view
+  var cryptoLabel = document.querySelector('#cryptoBar > div:first-child');
+  if (cryptoLabel) {
+    var viewName = analyticsView==='month' ? 'по месяцам' : analyticsView==='week' ? 'по неделям' : 'по дням';
+    cryptoLabel.textContent = 'Крипто-активы (в USD) — ' + viewName + ' — не включены в общий доход';
+  }
+
+  document.getElementById('cryptoBTC').textContent    = fmt(btcTotal);
   document.getElementById('cryptoBTCsub').textContent  = txLabel(btcCount);
-  document.getElementById('cryptoLTC').textContent   = fmt(ltcTotal);
+  document.getElementById('cryptoLTC').textContent    = fmt(ltcTotal);
   document.getElementById('cryptoLTCsub').textContent  = txLabel(ltcCount);
-  document.getElementById('cryptoUSDT').textContent  = fmt(usdtTotal);
+  document.getElementById('cryptoUSDT').textContent   = fmt(usdtTotal);
   document.getElementById('cryptoUSDTsub').textContent = txLabel(usdtCount);
 }
 
 // ── Server CSV loader ──────────────────────────────────────────────────────
 var SERVER_CSV_URLS = {
   1: 'crs.csv',
-  2: '/crsi.csv',
-  3: '/umo.csv'
+  2: '/2.csv',
+  3: '/3.csv'
 };
 
 function loadServerCSV(num, btn) {
