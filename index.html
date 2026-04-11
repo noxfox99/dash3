@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>USDT Sweep — Treasury Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+
+- { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+background: #080b10;
+color: #e8edf5;
+font-family: ‘Syne’, ‘Segoe UI’, sans-serif;
+min-height: 100vh;
+overflow-x: hidden;
+}
+
+body::before {
+content: ‘’;
+position: fixed;
+inset: 0;
+background-image:
+linear-gradient(rgba(0,229,160,0.015) 1px, transparent 1px),
+linear-gradient(90deg, rgba(0,229,160,0.015) 1px, transparent 1px);
+background-size: 40px 40px;
+pointer-events: none;
+z-index: 0;
+}
+
+.glow-orb {
+position: fixed;
+width: 600px; height: 600px;
+border-radius: 50%;
+background: radial-gradient(circle, rgba(0,229,160,0.06) 0%, transparent 70%);
+top: -200px; right: -100px;
+pointer-events: none;
+z-index: 0;
+}
+
+.shell {
+position: relative;
+z-index: 1;
+max-width: 1280px;
+margin: 0 auto;
+padding: 0 24px 80px;
+}
+
+header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 28px 0 32px;
+border-bottom: 1px solid #1e2530;
+}
+
+.logo { display: flex; align-items: center; gap: 12px; }
+
+.logo-icon {
+width: 38px; height: 38px;
+background: linear-gradient(135deg, #00e5a0, #00b8ff);
+border-radius: 10px;
+display: flex; align-items: center; justify-content: center;
+font-size: 18px;
+box-shadow: 0 0 20px rgba(0,229,160,0.3);
+}
+
+.logo-text { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; color: #e8edf5; }
+.logo-text span { color: #00e5a0; }
+
+.header-meta {
+font-family: ‘Space Mono’, ‘Courier New’, monospace;
+font-size: 11px;
+color: #5a6478;
+text-align: right;
+line-height: 1.7;
+}
+
+.net-badge {
+display: inline-block;
+background: rgba(0,229,160,0.1);
+color: #00e5a0;
+border: 1px solid rgba(0,229,160,0.25);
+border-radius: 4px;
+padding: 2px 8px;
+font-size: 10px;
+letter-spacing: 1px;
+}
+
+.stats-row {
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 16px;
+margin: 32px 0;
+}
+
+.stat-card {
+background: #0e1219;
+border: 1px solid #1e2530;
+border-radius: 14px;
+padding: 20px 22px;
+position: relative;
+overflow: hidden;
+transition: border-color 0.2s;
+}
+
+.stat-card:hover { border-color: rgba(0,229,160,0.3); }
+
+.stat-card::after {
+content: ‘’;
+position: absolute;
+top: 0; left: 0; right: 0;
+height: 2px;
+background: linear-gradient(90deg, #00e5a0, transparent);
+opacity: 0.5;
+}
+
+.stat-label {
+font-size: 10px;
+letter-spacing: 1.5px;
+text-transform: uppercase;
+color: #5a6478;
+margin-bottom: 10px;
+}
+
+.stat-value {
+font-family: ‘Space Mono’, ‘Courier New’, monospace;
+font-size: 26px;
+font-weight: 700;
+color: #e8edf5;
+line-height: 1;
+}
+
+.stat-value.green { color: #00e5a0; }
+.stat-value.blue  { color: #00b8ff; }
+.stat-value.warn  { color: #ffb700; }
+
+.stat-sub {
+font-family: ‘Space Mono’, ‘Courier New’, monospace;
+font-size: 11px;
+color: #5a6478;
+margin-top: 6px;
+}
+
+.controls-panel {
+background: #0e1219;
+border: 1px solid #1e2530;
+border-radius: 16px;
+padding: 24px 28px;
+margin-bottom: 24px;
+display: flex;
+gap: 20px;
+align-items: flex-end;
+flex-wrap: wrap;
+}
+
+.field-group {
+display: flex;
+flex-direction: column;
+gap: 7px;
+flex: 1;
+min-width: 200px;
+}
+
+.field-label {
+font-size: 10px;
+letter-spacing: 1.5px;
+text-transform: uppercase;
+color: #5a6478;
+}
+
+input, select {
+background: #080b10;
+border: 1px solid #1e2530;
+border-radius: 8px;
+color: #e8edf5;
+font-family: ‘Space Mono’, ‘Courier New’, monospace;
+font-size: 12px;
+padding: 10px 14px;
+outline: none;
+transition: border-color 0.2s, box-shadow 0.2s;
+width: 100%;
+}
+
+input:focus, select:focus {
+border-color: rgba(0,229,160,0.4);
+box-shadow: 0 0 0 3px rgba(0,229,160,0.06);
+}
+
+select option { background: #141820; color: #e8edf5; }
+
+.btn {
+font-family: ‘Syne’, ‘Segoe UI’, sans-serif;
+font-size: 13px;
+font-weight: 600;
+border: none;
+border-radius: 8px;
+padding: 10px 20px;
+cursor: pointer;
+transition: all 0.2s;
+white-space: nowrap;
+}
+
+.btn-primary {
+background: #00e5a0;
+color: #000000;
+box-shadow: 0 0 20px rgba(0,229,160,0.25);
+}
+
+.btn-primary:hover {
+background: #00ffb3;
+box-shadow: 0 0 30px rgba(0,229,160,0.4);
+transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+opacity: 0.4;
+cursor: not-allowed;
+transform: none;
+}
+
+.btn-ghost {
+background: transparent;
+color: #5a6478;
+border: 1px solid #1e2530;
+}
+
+.btn-ghost:hover {
+border-color: rgba(0,229,160,0.3);
+color: #e8edf5;
+}
+
+.btn-danger {
+background: rgba(255,69,96,0.12);
+color: #ff4560;
+border: 1px solid rgba(255,69,96,0.25);
+}
+
+.btn-danger:hover { background: rgba(255,69,96,0.2); }
+
+.section-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 14px;
+}
+
+.section-title {
+font-size: 13px;
+font-weight: 600;
+letter-spacing: 1px;
+text-transform: uppercase;
+color: #5a6478;
+}
+
+.section-actions { display: flex; gap: 10px; }
+
+.table-wrap {
+background: #0e1219;
+border: 1px solid #1e2530;
+border-radius: 16px;
+overflow: hidden;
+}
+
+table { width: 100%; border-collapse: collapse; font-family: ‘Space Mono’, ‘Courier New’, monospace; font-size: 12px; }
+thead tr { border-bottom: 1px solid #1e2530; }
+thead th {
+padding: 14px 18px;
+text-align: left;
+font-size: 10px;
+letter-spacing: 1.5px;
+text-transform: uppercase;
+color: #5a6478;
+font-weight: 400;
+}
+
+tbody tr { border-bottom: 1px solid rgba(30,37,48,0.6); transition: background 0.15s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(0,229,160,0.03); }
+tbody tr.selected { background: rgba(0,229,160,0.06); }
+td { padding: 13px 18px; vertical-align: middle; }
+
+.addr { color: #00b8ff; font-size: 11px; }
+.amount { color: #00e5a0; font-weight: 700; }
+.amount.zero { color: #5a6478; }
+
+.badge {
+display: inline-flex;
+align-items: center;
+gap: 5px;
+padding: 3px 10px;
+border-radius: 20px;
+font-size: 10px;
+letter-spacing: 0.5px;
+font-weight: 600;
+}
+
+.badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+.badge.pending    { background: rgba(255,183,0,0.12);  color: #ffb700; border: 1px solid rgba(255,183,0,0.2); }
+.badge.pending .badge-dot { background: #ffb700; box-shadow: 0 0 6px #ffb700; }
+
+.badge.done       { background: rgba(0,229,160,0.1);   color: #00e5a0; border: 1px solid rgba(0,229,160,0.2); }
+.badge.done .badge-dot    { background: #00e5a0; }
+
+.badge.processing { background: rgba(0,184,255,0.1);   color: #00b8ff; border: 1px solid rgba(0,184,255,0.2); animation: pulse-badge 1.5s infinite; }
+.badge.processing .badge-dot { background: #00b8ff; }
+
+.badge.failed     { background: rgba(255,69,96,0.1);   color: #ff4560; border: 1px solid rgba(255,69,96,0.2); }
+.badge.failed .badge-dot  { background: #ff4560; }
+
+@keyframes pulse-badge { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+.tx-hash { color: #5a6478; font-size: 11px; cursor: pointer; text-decoration: underline; text-decoration-style: dotted; }
+.tx-hash:hover { color: #00b8ff; }
+
+.fee-bar {
+background: #0e1219;
+border: 1px solid #1e2530;
+border-radius: 12px;
+padding: 16px 22px;
+margin-bottom: 20px;
+display: flex;
+align-items: center;
+gap: 28px;
+flex-wrap: wrap;
+}
+
+.fee-item { display: flex; flex-direction: column; gap: 3px; }
+
+.fee-item-label {
+font-size: 10px;
+letter-spacing: 1px;
+text-transform: uppercase;
+color: #5a6478;
+}
+
+.fee-item-val {
+font-family: ‘Space Mono’, ‘Courier New’, monospace;
+font-size: 14px;
+font-weight: 700;
+color: #e8edf5;
+}
+
+.fee-item-val.green { color: #00e5a0; }
+.fee-item-val.blue  { color: #00b8ff; }
+.fee-sep { width: 1px; height: 30px; background: #1e2530; }
+
+.import-zone {
+border: 2px dashed #1e2530;
+border-radius: 12px;
+padding: 30px;
+text-align: center;
+cursor: pointer;
+transition: all 0.2s;
+margin-bottom: 20px;
+}
+
+.import-zone:hover, .import-zone.drag-over {
+border-color: rgba(0,229,160,0.4);
+background: rgba(0,229,160,0.03);
+}
+
+.import-zone-icon { font-size: 28px; margin-bottom: 8px; }
+.import-zone-text { font-size: 13px; color: #5a6478; }
+.import-zone-text span { color: #00e5a0; }
+
+.log-panel {
+background: #080b10;
+border: 1px solid #1e2530;
+border-radius: 12px;
+padding: 16px;
+height: 320px;
+overflow-y: auto;
+font-family: ‘Space Mono’, ‘Courier New’, monospace;
+font-size: 11px;
+line-height: 1.8;
+}
+
+.log-panel::-webkit-scrollbar { width: 4px; }
+.log-panel::-webkit-scrollbar-track { background: transparent; }
+.log-panel::-webkit-scrollbar-thumb { background: #1e2530; border-radius: 2px; }
+
+.log-entry { display: flex; gap: 12px; }
+.log-time { color: #5a6478; min-width: 64px; }
+.log-msg.ok   { color: #00e5a0; }
+.log-msg.info { color: #00b8ff; }
+.log-msg.err  { color: #ff4560; }
+.log-msg.warn { color: #ffb700; }
+
+.sweep-progress {
+display: none;
+position: fixed;
+inset: 0;
+background: rgba(8,11,16,0.85);
+backdrop-filter: blur(6px);
+z-index: 100;
+align-items: center;
+justify-content: center;
+}
+
+.sweep-progress.active { display: flex; }
+
+.progress-card {
+background: #141820;
+border: 1px solid #1e2530;
+border-radius: 20px;
+padding: 40px 48px;
+width: 420px;
+text-align: center;
+}
+
+.progress-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; color: #e8edf5; }
+
+.progress-sub {
+font-family: ‘Space Mono’, ‘Courier New’, monospace;
+font-size: 11px;
+color: #5a6478;
+margin-bottom: 28px;
+}
+
+.progress-ring-wrap {
+position: relative;
+width: 100px; height: 100px;
+margin: 0 auto 24px;
+}
+
+.progress-ring { transform: rotate(-90deg); }
+.progress-ring-bg { fill: none; stroke: #1e2530; stroke-width: 6; }
+
+.progress-ring-fill {
+fill: none;
+stroke: #00e5a0;
+stroke-width: 6;
+stroke-linecap: round;
+stroke-dasharray: 283;
+stroke-dashoffset: 283;
+transition: stroke-dashoffset 0.4s ease;
+filter: drop-shadow(0 0 6px #00e5a0);
+}
+
+.progress-count {
+position: absolute;
+inset: 0;
+display: flex;
+align-items: center;
+justify-content: center;
+font-family: ‘Space Mono’, ‘Courier New’, monospace;
+font-size: 20px;
+font-weight: 700;
+color: #00e5a0;
+}
+
+.progress-status {
+font-family: ‘Space Mono’, ‘Courier New’, monospace;
+font-size: 12px;
+color: #5a6478;
+min-height: 20px;
+margin-bottom: 20px;
+}
+
+.progress-bar-track {
+background: #1e2530;
+border-radius: 4px;
+height: 4px;
+overflow: hidden;
+margin-bottom: 24px;
+}
+
+.progress-bar-fill {
+height: 100%;
+background: linear-gradient(90deg, #00e5a0, #00b8ff);
+border-radius: 4px;
+width: 0%;
+transition: width 0.4s ease;
+box-shadow: 0 0 10px rgba(0,229,160,0.4);
+}
+
+.tabs {
+display: flex;
+gap: 4px;
+margin-bottom: 20px;
+background: #0e1219;
+padding: 4px;
+border-radius: 10px;
+border: 1px solid #1e2530;
+width: fit-content;
+}
+
+.tab {
+font-family: ‘Syne’, ‘Segoe UI’, sans-serif;
+font-size: 12px;
+font-weight: 600;
+padding: 7px 18px;
+border-radius: 7px;
+cursor: pointer;
+color: #5a6478;
+border: none;
+background: transparent;
+transition: all 0.2s;
+letter-spacing: 0.3px;
+}
+
+.tab.active {
+background: #141820;
+color: #e8edf5;
+box-shadow: 0 1px 6px rgba(0,0,0,0.3);
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.empty-state {
+text-align: center;
+padding: 60px 20px;
+color: #5a6478;
+font-family: ‘Space Mono’, ‘Courier New’, monospace;
+font-size: 12px;
+line-height: 2;
+}
+
+.info-box {
+background: #0e1219;
+border: 1px solid #1e2530;
+border-radius: 12px;
+padding: 22px 26px;
+margin-top: 4px;
+}
+
+.info-box-label {
+font-size: 11px;
+letter-spacing: 1px;
+text-transform: uppercase;
+color: #5a6478;
+margin-bottom: 14px;
+}
+
+.info-line {
+font-family: ‘Space Mono’, ‘Courier New’, monospace;
+font-size: 12px;
+color: #e8edf5;
+line-height: 2.2;
+}
+
+@media (max-width: 900px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .stats-row { grid-template-columns: 1fr 1fr; } .controls-panel { flex-direction: column; } }
+</style>
+
+</head>
+<body>
+
+<div class="glow-orb"></div>
+
+<div class="sweep-progress" id="sweepOverlay">
+  <div class="progress-card">
+    <div class="progress-title">Sweeping Wallets</div>
+    <div class="progress-sub" id="overlayNetwork">TRC-20 · USDT · Mainnet</div>
+    <div class="progress-ring-wrap">
+      <svg class="progress-ring" width="100" height="100" viewBox="0 0 100 100">
+        <circle class="progress-ring-bg" cx="50" cy="50" r="45"/>
+        <circle class="progress-ring-fill" id="ringFill" cx="50" cy="50" r="45"/>
+      </svg>
+      <div class="progress-count" id="ringCount">0%</div>
+    </div>
+    <div class="progress-status" id="overlayStatus">Initializing…</div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="overlayBar"></div>
+    </div>
+    <button class="btn btn-ghost" onclick="cancelSweep()" style="font-size:12px;padding:8px 20px;">Cancel</button>
+  </div>
+</div>
+
+<div class="shell">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⬡</div>
+      <div>
+        <div class="logo-text">SWEEP<span>OPS</span></div>
+        <div style="font-size:10px;color:#5a6478;margin-top:2px;font-family:'Space Mono','Courier New',monospace">USDT Treasury Dashboard</div>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span class="net-badge">TRC-20</span><br/>
+      <span id="clock">–</span>
+    </div>
+  </header>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total Wallets</div>
+      <div class="stat-value" id="statTotal">0</div>
+      <div class="stat-sub" id="statTotalSub">–</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pending</div>
+      <div class="stat-value warn" id="statPending">0</div>
+      <div class="stat-sub">awaiting sweep</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Swept (Done)</div>
+      <div class="stat-value green" id="statDone">0</div>
+      <div class="stat-sub">completed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Swept USDT</div>
+      <div class="stat-value blue" id="statSwept">0.00</div>
+      <div class="stat-sub">USDT TRC-20</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('wallets', this)">Wallets</button>
+    <button class="tab" onclick="switchTab('config', this)">Config</button>
+    <button class="tab" onclick="switchTab('analytics', this)">Analytics</button>
+    <button class="tab" onclick="switchTab('log', this)">Activity Log</button>
+  </div>
+
+  <!-- WALLETS TAB -->
+
+  <div class="tab-content active" id="tab-wallets">
+
+```
+<div class="import-zone" id="importZone" onclick="document.getElementById('csvInput').click()"
+     ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+  <div class="import-zone-icon">📋</div>
+  <div class="import-zone-text">Drop CSV or <span>click to browse</span></div>
+  <div style="font-size:11px;color:#5a6478;margin-top:6px;font-family:'Space Mono','Courier New',monospace">
+    Columns: wallet, private_key, balance, status
+  </div>
+</div>
+<input type="file" id="csvInput" accept=".csv" style="display:none" onchange="handleFile(event)" />
+
+<div class="fee-bar">
+  <div class="fee-item">
+    <div class="fee-item-label">Est. Fee / TX</div>
+    <div class="fee-item-val green">~6–7 TRX</div>
+  </div>
+  <div class="fee-sep"></div>
+  <div class="fee-item">
+    <div class="fee-item-label">TRX Price</div>
+    <div class="fee-item-val blue" id="trxPrice">–</div>
+  </div>
+  <div class="fee-sep"></div>
+  <div class="fee-item">
+    <div class="fee-item-label">Selected</div>
+    <div class="fee-item-val" id="feeSelected">0 wallets</div>
+  </div>
+  <div class="fee-sep"></div>
+  <div class="fee-item">
+    <div class="fee-item-label">Est. Total Fee</div>
+    <div class="fee-item-val" id="feeTotalEst">0.0 TRX</div>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
+    <button class="btn btn-ghost" onclick="selectAll()" style="font-size:12px;padding:8px 14px;">Select Pending</button>
+    <button class="btn btn-primary" id="sweepBtn" onclick="startSweep()" disabled>⚡ Sweep Selected</button>
+  </div>
+</div>
+
+<div class="section-header">
+  <div class="section-title">Wallet Table — <span id="tableCount" style="color:#e8edf5">0 entries</span></div>
+  <div class="section-actions">
+    <button class="btn btn-ghost" onclick="addSampleData()" style="font-size:11px;padding:7px 14px;">+ Demo Data</button>
+    <button class="btn btn-danger" onclick="clearTable()" style="font-size:11px;padding:7px 14px;">Clear</button>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th style="width:40px;padding:14px 18px"><input type="checkbox" id="checkAll" onchange="toggleAll(this)" style="width:15px;height:15px;accent-color:#00e5a0;cursor:pointer" /></th>
+        <th>#</th>
+        <th>Wallet Address</th>
+        <th>Balance (USDT)</th>
+        <th>Status</th>
+        <th>TX Hash</th>
+        <th>Remove</th>
+      </tr>
+    </thead>
+    <tbody id="walletTableBody">
+      <tr>
+        <td colspan="7">
+          <div class="empty-state">No wallets loaded.<br/>Import a CSV or click "+ Demo Data".</div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+```
+
+  </div>
+
+  <!-- CONFIG TAB -->
+
+  <div class="tab-content" id="tab-config">
+    <div class="controls-panel">
+      <div class="field-group" style="flex:2">
+        <div class="field-label">Destination Wallet (treasury address)</div>
+        <input type="text" id="destAddr" placeholder="TXxx... — TRC-20 receiving address" />
+      </div>
+      <div class="field-group">
+        <div class="field-label">Min Balance to Sweep (USDT)</div>
+        <input type="number" id="minBalance" value="1" min="0" step="0.1" />
+      </div>
+      <div class="field-group">
+        <div class="field-label">Delay Between TXs (ms)</div>
+        <input type="number" id="txDelay" value="500" min="100" step="100" />
+      </div>
+      <div class="field-group">
+        <div class="field-label">Network</div>
+        <select id="networkSelect">
+          <option value="mainnet">TRON Mainnet</option>
+          <option value="nile">Nile Testnet</option>
+          <option value="shasta">Shasta Testnet</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="saveConfig()" style="align-self:flex-end">Save Config</button>
+    </div>
+
+```
+<div class="info-box">
+  <div class="info-box-label">Integration Notes</div>
+  <div class="info-line">• Connect a <span style="color:#00e5a0">TronWeb</span> backend — replace the simulation block in startSweep() with real TX calls</div>
+  <div class="info-line">• TRC-20 USDT contract: <span style="color:#00b8ff">TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t</span></div>
+  <div class="info-line">• Each sweep costs <span style="color:#00e5a0">~6–7 TRX</span> in energy/bandwidth</div>
+  <div class="info-line">• Source wallets need <span style="color:#ffb700">≥ 8–10 TRX</span> for gas before sweeping</div>
+  <div class="info-line">• Recommended: pre-fund all source wallets with <span style="color:#ffb700">10 TRX</span> before batch sweep</div>
+</div>
+```
+
+  </div>
+
+  <!-- ANALYTICS TAB -->
+
+  <div class="tab-content" id="tab-analytics">
+
+```
+<!-- Server CSV buttons -->
+<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+  <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#5a6478;margin-right:4px">Загрузить с сервера</div>
+  <button class="btn btn-ghost" id="serverBtn1" onclick="loadServerCSV(1,this)" style="font-size:12px;padding:8px 18px;display:flex;align-items:center;gap:7px">
+    <span style="width:8px;height:8px;border-radius:50%;background:#00e5a0;display:inline-block"></span>CSV 1
+  </button>
+  <button class="btn btn-ghost" id="serverBtn2" onclick="loadServerCSV(2,this)" style="font-size:12px;padding:8px 18px;display:flex;align-items:center;gap:7px">
+    <span style="width:8px;height:8px;border-radius:50%;background:#00b8ff;display:inline-block"></span>CSV 2
+  </button>
+  <button class="btn btn-ghost" id="serverBtn3" onclick="loadServerCSV(3,this)" style="font-size:12px;padding:8px 18px;display:flex;align-items:center;gap:7px">
+    <span style="width:8px;height:8px;border-radius:50%;background:#ffb700;display:inline-block"></span>CSV 3
+  </button>
+  <div id="serverLoadStatus" style="font-family:'Space Mono','Courier New',monospace;font-size:11px;color:#5a6478"></div>
+</div>
+
+<div class="import-zone" id="analyticsZone" onclick="document.getElementById('analyticsInput').click()"
+     ondragover="handleDragOver2(event)" ondragleave="handleDragLeave2(event)" ondrop="handleDrop2(event)">
+  <div class="import-zone-icon">&#128202;</div>
+  <div class="import-zone-text">Перетащите CSV или <span>нажмите для выбора</span></div>
+  <div style="font-size:11px;color:#5a6478;margin-top:6px;font-family:'Space Mono','Courier New',monospace">
+    Колонки: date, amount, method
+  </div>
+</div>
+<input type="file" id="analyticsInput" accept=".csv" style="display:none" onchange="handleAnalyticsFile(event)" />
+
+<div id="analyticsEmpty" style="text-align:center;padding:60px 20px;color:#5a6478;font-family:'Space Mono','Courier New',monospace;font-size:12px;line-height:2">
+  Данные не загружены.<br/>Импортируйте CSV с колонками "date", "amount", "method".
+</div>
+
+<div id="analyticsContent" style="display:none">
+
+  <!-- Period filter -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+    <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#5a6478">Период</div>
+    <div style="display:flex;gap:4px;background:#0e1219;padding:4px;border-radius:10px;border:1px solid #1e2530">
+      <button class="tab active" id="pAll"  onclick="setPeriod('all',this)"  style="padding:5px 12px;font-size:11px">Всё</button>
+      <button class="tab"        id="pYear" onclick="setPeriod('year',this)" style="padding:5px 12px;font-size:11px">Этот год</button>
+      <button class="tab"        id="pMonth"onclick="setPeriod('month',this)"style="padding:5px 12px;font-size:11px">Этот месяц</button>
+      <button class="tab"        id="pWeek" onclick="setPeriod('week',this)" style="padding:5px 12px;font-size:11px">Эта неделя</button>
+    </div>
+  </div>
+
+  <!-- Method breakdown top bar -->
+  <div id="methodBar" style="background:#0e1219;border:1px solid #1e2530;border-radius:14px;padding:18px 22px;margin-bottom:20px">
+    <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#5a6478;margin-bottom:14px">Доход по методу оплаты</div>
+    <div id="methodCards" style="display:flex;gap:12px;flex-wrap:wrap"></div>
+    <div style="margin-top:14px;height:8px;border-radius:4px;overflow:hidden;display:flex" id="methodStripBar"></div>
+  </div>
+
+  <!-- Crypto asset boxes (LTC / BTC / USDT in USD) -->
+  <div id="cryptoBar" style="display:none;background:#0e1219;border:1px solid #1e2530;border-radius:14px;padding:18px 22px;margin-bottom:20px">
+    <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#5a6478;margin-bottom:14px">Крипто-активы (в USD) — не включены в общий доход</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div style="background:#141820;border:1px solid #f7931a33;border-radius:10px;padding:14px 20px;flex:1;min-width:140px">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:#f7931a"></div>
+          <span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#5a6478">BTC</span>
+        </div>
+        <div style="font-family:Courier New,monospace;font-size:22px;font-weight:700;color:#f7931a" id="cryptoBTC">$0.00</div>
+        <div style="font-family:Courier New,monospace;font-size:10px;color:#5a6478;margin-top:4px" id="cryptoBTCsub">0 транзакций</div>
+      </div>
+      <div style="background:#141820;border:1px solid #345d9d33;border-radius:10px;padding:14px 20px;flex:1;min-width:140px">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:#345d9d"></div>
+          <span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#5a6478">LTC</span>
+        </div>
+        <div style="font-family:Courier New,monospace;font-size:22px;font-weight:700;color:#345d9d" id="cryptoLTC">$0.00</div>
+        <div style="font-family:Courier New,monospace;font-size:10px;color:#5a6478;margin-top:4px" id="cryptoLTCsub">0 транзакций</div>
+      </div>
+      <div style="background:#141820;border:1px solid #26a17b33;border-radius:10px;padding:14px 20px;flex:1;min-width:140px">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:#26a17b"></div>
+          <span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#5a6478">USDT</span>
+        </div>
+        <div style="font-family:Courier New,monospace;font-size:22px;font-weight:700;color:#26a17b" id="cryptoUSDT">$0.00</div>
+        <div style="font-family:Courier New,monospace;font-size:10px;color:#5a6478;margin-top:4px" id="cryptoUSDTsub">0 транзакций</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drill-down panel (shows when week row clicked) -->
+  <div id="drillPanel" style="display:none;background:#0e1219;border:1px solid rgba(0,229,160,0.25);border-radius:14px;padding:18px 22px;margin-bottom:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#00e5a0" id="drillTitle">Разбивка недели</div>
+      <button class="btn btn-ghost" onclick="closeDrill()" style="font-size:10px;padding:4px 10px">&#10005; Закрыть</button>
+    </div>
+    <div id="drillCards" style="display:flex;gap:12px;flex-wrap:wrap"></div>
+  </div>
+
+  <!-- Summary stats -->
+  <div class="stats-row" style="margin-top:0;margin-bottom:20px">
+    <div class="stat-card">
+      <div class="stat-label">Общий доход</div>
+      <div class="stat-value green" id="aTotal">0.00</div>
+      <div class="stat-sub">RUB за период</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Лучший месяц</div>
+      <div class="stat-value blue" id="aBestMonth">-</div>
+      <div class="stat-sub" id="aBestMonthLabel">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Лучшая неделя</div>
+      <div class="stat-value" style="color:#ffb700" id="aBestWeek">-</div>
+      <div class="stat-sub" id="aBestWeekLabel">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Ср. за месяц</div>
+      <div class="stat-value" id="aAvgMonth">0.00</div>
+      <div class="stat-sub">RUB среднее</div>
+    </div>
+  </div>
+
+  <!-- View toggle + chart -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+    <div class="section-title">Разбивка доходов</div>
+    <div style="display:flex;gap:4px;background:#0e1219;padding:4px;border-radius:10px;border:1px solid #1e2530">
+      <button class="tab active" id="viewMonthBtn" onclick="switchAnalyticsView('month',this)" style="padding:5px 14px;font-size:11px">По месяцам</button>
+      <button class="tab"        id="viewWeekBtn"  onclick="switchAnalyticsView('week',this)"  style="padding:5px 14px;font-size:11px">По неделям</button>
+      <button class="tab"        id="viewDayBtn"   onclick="switchAnalyticsView('day',this)"   style="padding:5px 14px;font-size:11px">По дням</button>
+    </div>
+  </div>
+
+  <div style="background:#0e1219;border:1px solid #1e2530;border-radius:16px;padding:24px 20px 16px;margin-bottom:20px">
+    <canvas id="incomeChart" height="200"></canvas>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th id="periodColLabel">Период</th>
+          <th>Доход (RUB)</th>
+          <th>Транзакции</th>
+          <th>vs Предыдущий</th>
+          <th>Доля</th>
+          <th>Топ метод</th>
+        </tr>
+      </thead>
+      <tbody id="analyticsTableBody"></tbody>
+    </table>
+  </div>
+
+</div>
+```
+
+  </div>
+
+  <!-- LOG TAB -->
+
+  <div class="tab-content" id="tab-log">
+    <div class="section-header">
+      <div class="section-title">Activity Log</div>
+      <button class="btn btn-ghost" onclick="clearLog()" style="font-size:11px;padding:7px 14px;">Clear</button>
+    </div>
+    <div class="log-panel" id="logPanel">
+      <div class="log-entry">
+        <span class="log-time">00:00:00</span>
+        <span class="log-msg info">Dashboard initialized. Ready.</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var wallets = [];
+var sweepRunning = false;
+var sweepCancel = false;
+var config = { dest: '', minBalance: 1, txDelay: 500, network: 'mainnet' };
+
+function updateClock() {
+  var now = new Date();
+  document.getElementById('clock').textContent = now.toUTCString().slice(17,25) + ' UTC';
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function switchTab(name, el) {
+  var contents = document.querySelectorAll('.tab-content');
+  for (var i=0;i<contents.length;i++) contents[i].classList.remove('active');
+  var tabs = document.querySelectorAll('.tab');
+  for (var i=0;i<tabs.length;i++) tabs[i].classList.remove('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  el.classList.add('active');
+}
+
+function log(msg, type) {
+  type = type || 'info';
+  var panel = document.getElementById('logPanel');
+  var now = new Date().toTimeString().slice(0,8);
+  var entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = '<span class="log-time">'+now+'</span><span class="log-msg '+type+'">'+msg+'</span>';
+  panel.appendChild(entry);
+  panel.scrollTop = panel.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('logPanel').innerHTML = '';
+  log('Log cleared.','info');
+}
+
+function handleFile(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev){ parseCSV(ev.target.result); };
+  reader.readAsText(file);
+}
+
+function handleDragOver(e) { e.preventDefault(); document.getElementById('importZone').classList.add('drag-over'); }
+function handleDragLeave(e) { document.getElementById('importZone').classList.remove('drag-over'); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('importZone').classList.remove('drag-over');
+  var file = e.dataTransfer.files[0]; if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev){ parseCSV(ev.target.result); };
+  reader.readAsText(file);
+}
+
+function parseCSV(text) {
+  var lines = text.trim().split('\n');
+  if (lines.length < 2) { log('CSV too short.','err'); return; }
+  var headers = lines[0].split(',').map(function(h){ return h.trim().toLowerCase().replace(/['"]/g,''); });
+  var iW = -1, iK = -1, iB = -1, iS = -1;
+  for (var i=0;i<headers.length;i++) {
+    if (headers[i].indexOf('wallet')>-1||headers[i].indexOf('address')>-1) iW=i;
+    if (headers[i].indexOf('key')>-1||headers[i].indexOf('private')>-1) iK=i;
+    if (headers[i].indexOf('balance')>-1||headers[i].indexOf('amount')>-1) iB=i;
+    if (headers[i].indexOf('status')>-1) iS=i;
+  }
+  if (iW===-1||iK===-1) { log('CSV must have "wallet" and "private_key" columns.','err'); return; }
+  var newRows = [];
+  for (var i=1;i<lines.length;i++) {
+    var cols = lines[i].split(',').map(function(c){ return c.trim().replace(/^["']|["']$/g,''); });
+    if (!cols[iW]) continue;
+    newRows.push({ id:Date.now()+i, wallet:cols[iW]||'', key:cols[iK]||'', balance:parseFloat(cols[iB])||0, status:(cols[iS]||'pending').toLowerCase(), txHash:'' });
+  }
+  wallets = wallets.concat(newRows);
+  log('Imported '+newRows.length+' wallets from CSV.','ok');
+  renderTable(); updateStats();
+}
+
+function addSampleData() {
+  var t = Date.now();
+  wallets = wallets.concat([
+    {id:t+1,wallet:'TXvE5dFzktjhBJZzMdBnYwRbN4vFm1gVwR',key:'demo_key_1',balance:42.50, status:'pending',txHash:''},
+    {id:t+2,wallet:'TYkNmP3rQ2HhS7LdWcXi6yJfGbUoVaTq9K',key:'demo_key_2',balance:118.00,status:'pending',txHash:''},
+    {id:t+3,wallet:'TRpD8wKuA4sZj2NqVgBxC5eLmYhFoWt1RP',key:'demo_key_3',balance:0.30,  status:'pending',txHash:''},
+    {id:t+4,wallet:'TBqF9cLvM6tXk3OsUyZe7aHnJrPiGdWm2T',key:'demo_key_4',balance:205.75,status:'done',   txHash:'abc123def456abc123def456abc123def456abc123def456abc123def456ab12'},
+    {id:t+5,wallet:'TNjG1dRwB8uYl4PtSzAf5bKoQcHiXvEm6N',key:'demo_key_5',balance:0.00,  status:'failed', txHash:''},
+    {id:t+6,wallet:'TKhC2eMxD7vZn5QsRyBg8aLpJuFoWt3AKx',key:'demo_key_6',balance:67.20, status:'pending',txHash:''},
+  ]);
+  log('Demo data loaded (6 wallets).','info');
+  renderTable(); updateStats();
+}
+
+function truncAddr(a) {
+  if (!a||a.length<12) return a;
+  return a.slice(0,6)+'…'+a.slice(-4);
+}
+
+function statusBadge(s) {
+  var badges = {
+    pending:    '<span class="badge pending"><span class="badge-dot"></span>PENDING</span>',
+    done:       '<span class="badge done"><span class="badge-dot"></span>DONE</span>',
+    processing: '<span class="badge processing"><span class="badge-dot"></span>SENDING</span>',
+    failed:     '<span class="badge failed"><span class="badge-dot"></span>FAILED</span>'
+  };
+  return badges[s] || badges.pending;
+}
+
+function renderTable() {
+  var tbody = document.getElementById('walletTableBody');
+  if (!wallets.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">No wallets loaded.<br/>Import a CSV or click "+ Demo Data".</div></td></tr>';
+    document.getElementById('tableCount').textContent = '0 entries';
+    return;
+  }
+  document.getElementById('tableCount').textContent = wallets.length + ' entries';
+  var html = '';
+  for (var i=0;i<wallets.length;i++) {
+    var w = wallets[i];
+    var txCell = w.txHash
+      ? '<span class="tx-hash" onclick="openTx(\''+w.txHash+'\')" title="'+w.txHash+'">'+w.txHash.slice(0,12)+'…</span>'
+      : '<span style="color:#5a6478">—</span>';
+    html += '<tr id="row-'+w.id+'" class="'+(w._selected?'selected':'')+'">'
+      +'<td style="padding:13px 18px"><input type="checkbox"'+(w._selected?' checked':'')+(w.status==='done'?' disabled':'')
+      +' onchange="toggleRow('+w.id+', this)" style="width:15px;height:15px;accent-color:#00e5a0;cursor:pointer"/></td>'
+      +'<td style="padding:13px 18px;color:#5a6478">'+(i+1)+'</td>'
+      +'<td style="padding:13px 18px"><span class="addr" title="'+w.wallet+'">'+truncAddr(w.wallet)+'</span></td>'
+      +'<td style="padding:13px 18px" class="amount'+(w.balance<=0?' zero':'')+'">'+w.balance.toFixed(2)+'</td>'
+      +'<td style="padding:13px 18px">'+statusBadge(w.status)+'</td>'
+      +'<td style="padding:13px 18px">'+txCell+'</td>'
+      +'<td style="padding:13px 18px"><button class="btn btn-ghost" onclick="removeSingle('+w.id+')" style="font-size:10px;padding:4px 10px;color:#ff4560;border-color:rgba(255,69,96,0.2)">✕</button></td>'
+      +'</tr>';
+  }
+  tbody.innerHTML = html;
+  updateSweepBtn();
+}
+
+function updateStats() {
+  var total=wallets.length, pending=0, done=0, swept=0;
+  for (var i=0;i<wallets.length;i++) {
+    if (wallets[i].status==='pending') pending++;
+    if (wallets[i].status==='done') { done++; swept+=wallets[i].balance; }
+  }
+  document.getElementById('statTotal').textContent    = total;
+  document.getElementById('statTotalSub').textContent = done+' swept, '+pending+' pending';
+  document.getElementById('statPending').textContent  = pending;
+  document.getElementById('statDone').textContent     = done;
+  document.getElementById('statSwept').textContent    = swept.toFixed(2);
+}
+
+function toggleRow(id, cb) {
+  for (var i=0;i<wallets.length;i++) { if(wallets[i].id===id){ wallets[i]._selected=cb.checked; break; } }
+  var tr = document.getElementById('row-'+id);
+  if (tr) { if(cb.checked) tr.classList.add('selected'); else tr.classList.remove('selected'); }
+  updateSweepBtn(); updateFeeBar();
+}
+
+function toggleAll(masterCb) {
+  for (var i=0;i<wallets.length;i++) { if(wallets[i].status!=='done') wallets[i]._selected=masterCb.checked; }
+  renderTable(); updateFeeBar();
+}
+
+function selectAll() {
+  for (var i=0;i<wallets.length;i++) { if(wallets[i].status==='pending') wallets[i]._selected=true; }
+  renderTable(); updateFeeBar();
+}
+
+function updateSweepBtn() {
+  var sel=0;
+  for (var i=0;i<wallets.length;i++) { if(wallets[i]._selected&&wallets[i].status!=='done') sel++; }
+  var btn = document.getElementById('sweepBtn');
+  btn.disabled = sel===0||sweepRunning;
+  btn.textContent = sel>0 ? '⚡ Sweep '+sel+' Wallets' : '⚡ Sweep Selected';
+}
+
+function updateFeeBar() {
+  var sel=0;
+  for (var i=0;i<wallets.length;i++) { if(wallets[i]._selected&&wallets[i].status!=='done') sel++; }
+  document.getElementById('feeSelected').textContent = sel+' wallet'+(sel!==1?'s':'');
+  document.getElementById('feeTotalEst').textContent = (sel*6.5).toFixed(1)+' TRX';
+}
+
+function removeSingle(id) {
+  wallets = wallets.filter(function(w){ return w.id!==id; });
+  renderTable(); updateStats(); updateFeeBar();
+}
+
+function clearTable() {
+  if(!confirm('Clear all wallet data?')) return;
+  wallets=[];
+  renderTable(); updateStats(); updateFeeBar();
+  log('Table cleared.','warn');
+}
+
+function saveConfig() {
+  config.dest       = document.getElementById('destAddr').value.trim();
+  config.minBalance = parseFloat(document.getElementById('minBalance').value)||1;
+  config.txDelay    = parseInt(document.getElementById('txDelay').value)||500;
+  config.network    = document.getElementById('networkSelect').value;
+  log('Config saved. Dest: '+(config.dest||'(none)')+' | Min: '+config.minBalance+' USDT | Delay: '+config.txDelay+'ms | Net: '+config.network,'ok');
+  document.getElementById('overlayNetwork').textContent = 'TRC-20 · USDT · '+config.network.charAt(0).toUpperCase()+config.network.slice(1);
+}
+
+function sleep(ms) { return new Promise(function(r){ setTimeout(r,ms); }); }
+
+function randomTxHash() {
+  var c='0123456789abcdef', o='';
+  for(var i=0;i<64;i++) o+=c[Math.floor(Math.random()*16)];
+  return o;
+}
+
+function openTx(hash) {
+  var base = config.network==='mainnet' ? 'https://tronscan.org/#/transaction/'
+    : config.network==='nile' ? 'https://nile.tronscan.org/#/transaction/'
+    : 'https://shasta.tronscan.org/#/transaction/';
+  window.open(base+hash,'_blank');
+}
+
+function setProgress(pct, done, total, status) {
+  var circ = 2*Math.PI*45;
+  document.getElementById('ringFill').style.strokeDashoffset = circ-(circ*pct/100);
+  document.getElementById('ringCount').textContent  = pct+'%';
+  document.getElementById('overlayBar').style.width = pct+'%';
+  document.getElementById('overlayStatus').textContent = '('+done+'/'+total+') '+status;
+}
+
+async function startSweep() {
+  if (!config.dest) {
+    alert('Set a destination address in the Config tab first.');
+    switchTab('config', document.querySelectorAll('.tab')[1]);
+    return;
+  }
+  var selected = wallets.filter(function(w){ return w._selected&&w.status==='pending'&&w.balance>=config.minBalance; });
+  if (!selected.length) { log('No eligible wallets selected (check min balance / status).','warn'); return; }
+
+  sweepRunning=true; sweepCancel=false;
+  document.getElementById('sweepOverlay').classList.add('active');
+  document.getElementById('sweepBtn').disabled=true;
+  log('Starting sweep: '+selected.length+' wallets → '+config.dest.slice(0,10)+'…','info');
+
+  for (var i=0;i<selected.length;i++) {
+    if (sweepCancel) { log('Sweep cancelled by user.','warn'); break; }
+    var w = selected[i];
+    setProgress(Math.round((i/selected.length)*100), i, selected.length, 'Sending '+w.balance.toFixed(2)+' USDT from …'+w.wallet.slice(-6));
+    w.status='processing'; renderTable();
+
+    // ── Replace below with real TronWeb TX call ──
+    await sleep(config.txDelay+Math.random()*300);
+    var success = Math.random()>0.08;
+    // ─────────────────────────────────────────────
+
+    if (success) {
+      w.status='done'; w.txHash=randomTxHash(); w._selected=false;
+      log('✓ Swept '+w.balance.toFixed(2)+' USDT from '+w.wallet.slice(0,8)+'… TX: '+w.txHash.slice(0,16)+'…','ok');
+    } else {
+      w.status='failed';
+      log('✗ Failed: '+w.wallet.slice(0,8)+'… — insufficient TRX for gas','err');
+    }
+    renderTable(); updateStats();
+  }
+
+  setProgress(100, selected.length, selected.length, 'Complete');
+  await sleep(800);
+  document.getElementById('sweepOverlay').classList.remove('active');
+  sweepRunning=false; renderTable(); updateSweepBtn();
+  log('Sweep session complete.','ok');
+}
+
+function cancelSweep() { sweepCancel=true; }
+
+async function fetchTRXPrice() {
+  try {
+    var r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tron&vs_currencies=usd');
+    var d = await r.json();
+    var price = d&&d.tron&&d.tron.usd;
+    if (price) document.getElementById('trxPrice').textContent = '$'+price.toFixed(4);
+  } catch(e) {
+    document.getElementById('trxPrice').textContent = '~$0.12';
+  }
+}
+fetchTRXPrice();
+
+
+
+
+// ── ANALYTICS ──────────────────────────────────────────────────────────────
+var incomeData   = [];
+var analyticsView = 'month';
+var activePeriod  = 'all';
+var MNAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var METHOD_COLORS = ['#00e5a0','#00b8ff','#ffb700','#ff4560','#a78bfa','#fb923c','#34d399','#f472b6'];
+
+function handleDragOver2(e) { e.preventDefault(); document.getElementById('analyticsZone').classList.add('drag-over'); }
+function handleDragLeave2(e) { document.getElementById('analyticsZone').classList.remove('drag-over'); }
+function handleDrop2(e) {
+  e.preventDefault();
+  document.getElementById('analyticsZone').classList.remove('drag-over');
+  var file = e.dataTransfer.files[0]; if (!file) return;
+  var r = new FileReader(); r.onload = function(ev){ parseIncomeCSV(ev.target.result); }; r.readAsText(file);
+}
+function handleAnalyticsFile(e) {
+  var file = e.target.files[0]; if (!file) return;
+  var r = new FileReader(); r.onload = function(ev){ parseIncomeCSV(ev.target.result); }; r.readAsText(file);
+}
+
+function parseIncDate(str) {
+  str = (str||'').trim().replace(/["']/g,'');
+  var m;
+  // "2026-04-05 18:55:30.343795" or "2026-04-05T18:55:30" — grab date part only
+  m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+  // DD/MM/YYYY or DD-MM-YYYY
+  m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (m) return new Date(+m[3], +m[2]-1, +m[1]);
+  return null;
+}
+
+function parseIncomeCSV(text) {
+  var lines = text.trim().split('\n');
+  if (lines.length < 2) { log('CSV слишком короткий.','err'); return; }
+  var headers = lines[0].split(',').map(function(h){ return h.trim().toLowerCase().replace(/["']/g,''); });
+  var iDate=-1, iAmt=-1, iMethod=-1, iBTC=-1, iLTC=-1, iUSDT=-1;
+  for (var i=0;i<headers.length;i++) {
+    if (headers[i].indexOf('date')>-1||headers[i].indexOf('time')>-1) iDate=i;
+    if (headers[i].indexOf('amount')>-1||headers[i].indexOf('sum')>-1) iAmt=i;
+    if (headers[i].indexOf('method')>-1||headers[i].indexOf('type')>-1||headers[i].indexOf('payment')>-1) iMethod=i;
+    if (headers[i]==='btc') iBTC=i;
+    if (headers[i]==='ltc') iLTC=i;
+    if (headers[i]==='usdt') iUSDT=i;
+  }
+  if (iDate===-1||iAmt===-1) { log('CSV должен содержать колонки "date" и "amount".','err'); return; }
+  var rows=[];
+  for (var i=1;i<lines.length;i++) {
+    var line=lines[i].trim(); if(!line) continue;
+    var cols=line.split(',').map(function(c){ return c.trim().replace(/^["']|["']$/g,''); });
+    var d=parseIncDate(cols[iDate]); var a=parseFloat(cols[iAmt]);
+    if (!d||isNaN(a)) continue;
+    var btcVal  = iBTC>-1  ? (parseFloat(cols[iBTC])||0)  : 0;
+    var ltcVal  = iLTC>-1  ? (parseFloat(cols[iLTC])||0)  : 0;
+    var usdtVal = iUSDT>-1 ? (parseFloat(cols[iUSDT])||0) : 0;
+    rows.push({ date:d, amount:a, method: iMethod>-1 ? (cols[iMethod]||'unknown').toLowerCase() : 'unknown', btc:btcVal, ltc:ltcVal, usdt_usd:usdtVal });
+  }
+  if (!rows.length) { log('Нет корректных строк в CSV.','err'); return; }
+  incomeData=rows;
+  log('Загружено '+rows.length+' строк доходов.','ok');
+  document.getElementById('analyticsEmpty').style.display='none';
+  document.getElementById('analyticsContent').style.display='block';
+  renderAnalytics();
+}
+
+function filterByPeriod(rows) {
+  if (activePeriod==='all') return rows;
+  var now=new Date(), filtered=[];
+  for (var i=0;i<rows.length;i++) {
+    var d=rows[i].date;
+    if (activePeriod==='year'  && d.getFullYear()===now.getFullYear()) filtered.push(rows[i]);
+    else if (activePeriod==='month' && d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()) filtered.push(rows[i]);
+    else if (activePeriod==='week') {
+      var weekStart=new Date(now); weekStart.setDate(now.getDate()-((now.getDay()+6)%7)); weekStart.setHours(0,0,0,0);
+      if (d>=weekStart) filtered.push(rows[i]);
+    }
+  }
+  return filtered;
+}
+
+function setPeriod(p, el) {
+  activePeriod=p;
+  var btns=document.querySelectorAll('#pAll,#pYear,#pMonth,#pWeek');
+  for (var i=0;i<btns.length;i++) btns[i].classList.remove('active');
+  el.classList.add('active');
+  renderAnalytics();
+}
+
+function getMonthKey(d) { var m=d.getMonth()+1; return d.getFullYear()+'-'+(m<10?'0':'')+m; }
+function getWeekKey(d) {
+  // Monday-based ISO week start
+  var tmp = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  var day = tmp.getDay(); // 0=Sun
+  tmp.setDate(tmp.getDate() - ((day + 6) % 7)); // shift to Monday
+  var yy = tmp.getFullYear();
+  var mm = tmp.getMonth() + 1;
+  var dd = tmp.getDate();
+  return yy + '-' + (mm < 10 ? '0' : '') + mm + '-' + (dd < 10 ? '0' : '') + dd;
+}
+function fmtWeekKey(k) {
+  var p = k.split('-');
+  return 'Нед. ' + p[2] + '.' + p[1] + '.' + p[0];
+}
+function fmtMonthKey(k) { var p=k.split('-'); return MNAMES[parseInt(p[1])-1]+' '+p[0]; }
+function getDayKey(d) {
+  var mm=d.getMonth()+1, dd=d.getDate();
+  return d.getFullYear()+'-'+(mm<10?'0':'')+mm+'-'+(dd<10?'0':'')+dd;
+}
+function fmtDayKey(k) {
+  var p=k.split('-');
+  return p[2]+' '+MNAMES[parseInt(p[1])-1]+' '+p[0];
+}
+
+function allMethods(rows) {
+  var map={};
+  for (var i=0;i<rows.length;i++) map[rows[i].method]=1;
+  return Object.keys(map).sort();
+}
+
+function groupByKey(rows, keyFn) {
+  var map={},order=[];
+  for (var i=0;i<rows.length;i++) {
+    var k=keyFn(rows[i].date);
+    if (!map[k]) { map[k]={key:k,amount:0,count:0,byMethod:{}}; order.push(k); }
+    map[k].amount+=rows[i].amount; map[k].count++;
+    map[k].byMethod[rows[i].method]=(map[k].byMethod[rows[i].method]||0)+rows[i].amount;
+  }
+  order.sort();
+  return order.map(function(k){ return map[k]; });
+}
+
+function methodColorMap(methods) {
+  var map={};
+  for (var i=0;i<methods.length;i++) map[methods[i]]=METHOD_COLORS[i%METHOD_COLORS.length];
+  return map;
+}
+
+function renderAnalytics() {
+  var filtered = filterByPeriod(incomeData);
+  var groups   = analyticsView==='month' ? groupByKey(filtered,getMonthKey) : analyticsView==='week' ? groupByKey(filtered,getWeekKey) : groupByKey(filtered,getDayKey);
+  var mGroups  = groupByKey(filtered,getMonthKey);
+  var wGroups  = groupByKey(filtered,getWeekKey);
+  var methods  = allMethods(filtered);
+  var colMap   = methodColorMap(methods);
+
+  var total=0; for (var i=0;i<filtered.length;i++) total+=filtered[i].amount;
+
+  var bestM={amount:0,key:''};
+  for (var i=0;i<mGroups.length;i++) { if(mGroups[i].amount>bestM.amount) bestM=mGroups[i]; }
+  var bestW={amount:0,key:''};
+  for (var i=0;i<wGroups.length;i++) { if(wGroups[i].amount>bestW.amount) bestW=wGroups[i]; }
+  var avgMonth = mGroups.length ? total/mGroups.length : 0;
+
+  document.getElementById('aTotal').textContent       = '₽'+total.toFixed(2);
+  document.getElementById('aBestMonth').textContent   = '₽'+bestM.amount.toFixed(2);
+  document.getElementById('aBestMonthLabel').textContent = bestM.key ? fmtMonthKey(bestM.key) : '-';
+  document.getElementById('aBestWeek').textContent    = '₽'+bestW.amount.toFixed(2);
+  document.getElementById('aBestWeekLabel').textContent  = bestW.key||'-';
+  document.getElementById('aAvgMonth').textContent    = '₽'+avgMonth.toFixed(2);
+  document.getElementById('periodColLabel').textContent  = analyticsView==='month' ? 'Месяц' : analyticsView==='week' ? 'Неделя' : 'День';
+
+  renderMethodBar(filtered, methods, colMap, total);
+  renderCryptoBoxes(filtered);
+  drawBarChart(groups);
+  renderIncomeTable(groups, total, colMap);
+}
+
+function renderMethodBar(rows, methods, colMap, total) {
+  // Method summary cards
+  var methodTotals={};
+  for (var i=0;i<rows.length;i++) methodTotals[rows[i].method]=(methodTotals[rows[i].method]||0)+rows[i].amount;
+
+  var cardsHtml='';
+  for (var i=0;i<methods.length;i++) {
+    var m=methods[i]; var amt=methodTotals[m]||0; var col=colMap[m];
+    var pct=total>0?(amt/total*100):0;
+    cardsHtml+='<div style="background:#141820;border:1px solid #1e2530;border-radius:10px;padding:12px 16px;min-width:130px;flex:1">'
+      +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
+      +'<div style="width:8px;height:8px;border-radius:50%;background:'+col+'"></div>'
+      +'<span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#5a6478">'+m+'</span></div>'
+      +'<div style="font-family:Courier New,monospace;font-size:18px;font-weight:700;color:'+col+'">'
+      +'₽'+amt.toFixed(2)+'</div>'
+      +'<div style="font-family:Courier New,monospace;font-size:10px;color:#5a6478;margin-top:3px">'+pct.toFixed(1)+'% от общего</div>'
+      +'</div>';
+  }
+  document.getElementById('methodCards').innerHTML = cardsHtml;
+
+  // Strip bar
+  var stripHtml='';
+  for (var i=0;i<methods.length;i++) {
+    var m=methods[i]; var amt=methodTotals[m]||0; var col=colMap[m];
+    var pct=total>0?(amt/total*100):0;
+    if (pct>0) stripHtml+='<div style="width:'+pct+'%;background:'+col+';height:100%;transition:width 0.4s"></div>';
+  }
+  document.getElementById('methodStripBar').innerHTML = stripHtml;
+}
+
+function switchAnalyticsView(view, el) {
+  analyticsView=view;
+  var btns=document.querySelectorAll('#viewMonthBtn,#viewWeekBtn,#viewDayBtn');
+  for (var i=0;i<btns.length;i++) btns[i].classList.remove('active');
+  el.classList.add('active');
+  closeDrill();
+  renderAnalytics();
+}
+
+// ── Drill-down ─────────────────────────────────────────────────────────────
+function openDrill(group, colMap) {
+  var methods=Object.keys(group.byMethod).sort();
+  var panel=document.getElementById('drillPanel');
+  var title=analyticsView==='month' ? fmtMonthKey(group.key) : analyticsView==='week' ? fmtWeekKey(group.key) : fmtDayKey(group.key);
+  document.getElementById('drillTitle').textContent = title+' — по методам оплаты';
+  var html='';
+  for (var i=0;i<methods.length;i++) {
+    var m=methods[i]; var amt=group.byMethod[m]; var col=colMap[m]||'#5a6478';
+    var pct=group.amount>0?(amt/group.amount*100):0;
+    html+='<div style="background:#080b10;border:1px solid '+col+'33;border-radius:10px;padding:12px 18px;min-width:140px;flex:1">'
+      +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
+      +'<div style="width:8px;height:8px;border-radius:50%;background:'+col+'"></div>'
+      +'<span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#5a6478">'+m+'</span></div>'
+      +'<div style="font-family:Courier New,monospace;font-size:20px;font-weight:700;color:'+col+'">'
+      +'₽'+amt.toFixed(2)+'</div>'
+      +'<div style="margin-top:8px;height:4px;background:#1e2530;border-radius:2px;overflow:hidden">'
+      +'<div style="width:'+pct.toFixed(1)+'%;height:100%;background:'+col+';border-radius:2px"></div></div>'
+      +'<div style="font-family:Courier New,monospace;font-size:10px;color:#5a6478;margin-top:4px">'+pct.toFixed(1)+'% от периода</div>'
+      +'</div>';
+  }
+  document.getElementById('drillCards').innerHTML=html;
+  panel.style.display='block';
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function closeDrill() {
+  document.getElementById('drillPanel').style.display='none';
+}
+
+// ── Canvas bar chart ───────────────────────────────────────────────────────
+function drawBarChart(groups) {
+  var canvas=document.getElementById('incomeChart'); if(!canvas) return;
+  var W=canvas.parentNode.clientWidth-40; if(W<200) W=200;
+  var H=220; canvas.width=W; canvas.height=H;
+  var ctx=canvas.getContext('2d'); ctx.clearRect(0,0,W,H);
+  if (!groups.length) return;
+
+  var PAD_L=64,PAD_R=20,PAD_T=16,PAD_B=48;
+  var cW=W-PAD_L-PAD_R, cH=H-PAD_T-PAD_B;
+  var maxVal=0;
+  for (var i=0;i<groups.length;i++) if(groups[i].amount>maxVal) maxVal=groups[i].amount;
+  if (maxVal===0) maxVal=1;
+
+  // Grid
+  ctx.strokeStyle='rgba(30,37,48,0.9)'; ctx.lineWidth=1;
+  ctx.fillStyle='#5a6478'; ctx.font='10px Courier New,monospace'; ctx.textAlign='right';
+  for (var s=0;s<=4;s++) {
+    var yVal=maxVal/4*s; var yPos=PAD_T+cH-(cH*s/4);
+    ctx.beginPath(); ctx.moveTo(PAD_L,yPos); ctx.lineTo(PAD_L+cW,yPos); ctx.stroke();
+    var lbl=yVal>=1000?'₽'+(yVal/1000).toFixed(1)+'k':'₽'+yVal.toFixed(0);
+    ctx.fillText(lbl,PAD_L-6,yPos+3);
+  }
+
+  var n=groups.length;
+  var barGap=Math.max(2,Math.floor(cW/n*0.18));
+  var barW=Math.max(4,Math.floor(cW/n)-barGap);
+
+  for (var i=0;i<n;i++) {
+    var g=groups[i];
+    var barH=Math.max(2,(g.amount/maxVal)*cH);
+    var xS=PAD_L+Math.floor(i*cW/n)+Math.floor(barGap/2);
+    var yS=PAD_T+cH-barH;
+    var r=Math.min(4,barW/2);
+
+    var grad=ctx.createLinearGradient(0,yS,0,yS+barH);
+    grad.addColorStop(0,'rgba(0,229,160,0.75)');
+    grad.addColorStop(1,'rgba(0,229,160,0.08)');
+    ctx.fillStyle=grad;
+
+    ctx.beginPath();
+    ctx.moveTo(xS+r,yS); ctx.lineTo(xS+barW-r,yS);
+    ctx.quadraticCurveTo(xS+barW,yS,xS+barW,yS+r);
+    ctx.lineTo(xS+barW,yS+barH); ctx.lineTo(xS,yS+barH);
+    ctx.lineTo(xS,yS+r); ctx.quadraticCurveTo(xS,yS,xS+r,yS);
+    ctx.closePath(); ctx.fill();
+
+    ctx.strokeStyle='#00e5a0'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(xS+r,yS); ctx.lineTo(xS+barW-r,yS);
+    ctx.quadraticCurveTo(xS+barW,yS,xS+barW,yS+r); ctx.stroke();
+
+    var lbl2=analyticsView==='month'?fmtMonthKey(g.key):analyticsView==='week'?fmtWeekKey(g.key):fmtDayKey(g.key);
+    ctx.fillStyle='#5a6478'; ctx.font='9px Courier New,monospace'; ctx.textAlign='center';
+    ctx.save(); ctx.translate(xS+barW/2,H-PAD_B+14);
+    if(n>8){ctx.rotate(-Math.PI/4);ctx.textAlign='right';}
+    ctx.fillText(lbl2,0,0); ctx.restore();
+
+    if (barH>22&&barW>28) {
+      var vl=g.amount>=1000?'₽'+(g.amount/1000).toFixed(1)+'k':'₽'+g.amount.toFixed(0);
+      ctx.fillStyle='#00e5a0'; ctx.font='bold 9px Courier New,monospace'; ctx.textAlign='center';
+      ctx.fillText(vl,xS+barW/2,yS-4);
+    }
+  }
+  ctx.strokeStyle='#1e2530'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(PAD_L,PAD_T); ctx.lineTo(PAD_L,PAD_T+cH); ctx.stroke();
+}
+
+// ── Table ──────────────────────────────────────────────────────────────────
+function renderIncomeTable(groups, total, colMap) {
+  var tbody=document.getElementById('analyticsTableBody');
+  if (!groups.length) { tbody.innerHTML=''; return; }
+  var rows='';
+  for (var i=0;i<groups.length;i++) {
+    var g=groups[i];
+    var lbl=analyticsView==='month'?fmtMonthKey(g.key):analyticsView==='week'?fmtWeekKey(g.key):fmtDayKey(g.key);
+    var share=total>0?(g.amount/total*100):0;
+    var vsPrev='<span style="color:#5a6478">-</span>';
+    if (i>0) {
+      var prev=groups[i-1].amount;
+      if (prev>0) {
+        var diff=(g.amount-prev)/prev*100;
+        var col=diff>=0?'#00e5a0':'#ff4560';
+        vsPrev='<span style="color:'+col+';font-weight:700">'+(diff>=0?'+':'')+diff.toFixed(1)+'%</span>';
+      }
+    }
+    var bw=Math.max(share,1).toFixed(1);
+    var bar='<div style="display:flex;align-items:center;gap:8px">'
+      +'<div style="width:80px;height:6px;background:#1e2530;border-radius:3px;overflow:hidden">'
+      +'<div style="width:'+bw+'%;height:100%;background:#00b8ff;border-radius:3px"></div></div>'
+      +'<span style="color:#5a6478;font-size:10px">'+share.toFixed(1)+'%</span></div>';
+
+    // top method
+    var topMethod='-', topAmt=0;
+    for (var m in g.byMethod) { if(g.byMethod[m]>topAmt){topAmt=g.byMethod[m];topMethod=m;} }
+    var mCol=colMap[topMethod]||'#5a6478';
+    var topCell='<span style="color:'+mCol+';font-size:10px;font-family:Courier New,monospace;text-transform:uppercase;letter-spacing:0.5px">'+topMethod+'</span>';
+
+    var clickable = analyticsView==='week' || analyticsView==='day';
+    var rowStyle  = clickable ? 'cursor:pointer' : '';
+    var rowClick  = clickable ? 'onclick="openDrill(analyticsGroups['+i+'], analyticsColMap)"' : '';
+
+    rows+='<tr style="'+rowStyle+'" '+rowClick+'>'
+      +'<td style="padding:12px 18px;color:#5a6478">'+(i+1)+'</td>'
+      +'<td style="padding:12px 18px;color:#e8edf5;font-family:Courier New,monospace;font-size:12px">'
+      +(clickable?'<span style="color:#00b8ff">&#9654;</span> ':'')+lbl+'</td>'
+      +'<td style="padding:12px 18px;color:#00e5a0;font-weight:700;font-family:Courier New,monospace">₽'+g.amount.toFixed(2)+'</td>'
+      +'<td style="padding:12px 18px;color:#5a6478;font-family:Courier New,monospace">'+g.count+'</td>'
+      +'<td style="padding:12px 18px">'+vsPrev+'</td>'
+      +'<td style="padding:12px 18px">'+bar+'</td>'
+      +'<td style="padding:12px 18px">'+topCell+'</td>'
+      +'</tr>';
+  }
+  tbody.innerHTML=rows;
+}
+
+// Store current groups/colMap for drill-down onclick access
+var analyticsGroups=[];
+var analyticsColMap={};
+
+var _origRender=renderAnalytics;
+renderAnalytics=function(){
+  var filtered=filterByPeriod(incomeData);
+  var methods=allMethods(filtered);
+  analyticsColMap=methodColorMap(methods);
+  analyticsGroups=analyticsView==='month'?groupByKey(filtered,getMonthKey):analyticsView==='week'?groupByKey(filtered,getWeekKey):groupByKey(filtered,getDayKey);
+  _origRender();
+};
+
+window.addEventListener('resize',function(){
+  if(incomeData.length) drawBarChart(analyticsGroups);
+});
+
+// ── Crypto asset boxes ─────────────────────────────────────────────────────
+function renderCryptoBoxes(rows) {
+  var btcTotal=0, ltcTotal=0, usdtTotal=0;
+  var btcCount=0, ltcCount=0, usdtCount=0;
+  for (var i=0;i<rows.length;i++) {
+    if (rows[i].btc)      { btcTotal  += rows[i].btc;      btcCount++;  }
+    if (rows[i].ltc)      { ltcTotal  += rows[i].ltc;      ltcCount++;  }
+    if (rows[i].usdt_usd) { usdtTotal += rows[i].usdt_usd; usdtCount++; }
+  }
+  var hasCrypto = btcTotal>0 || ltcTotal>0 || usdtTotal>0;
+  document.getElementById('cryptoBar').style.display = hasCrypto ? 'block' : 'none';
+  if (!hasCrypto) return;
+
+  function fmt(v) { return '$'+(v>=1000?(v/1000).toFixed(2)+'k':v.toFixed(2)); }
+  function txLabel(n) { return n+' '+(n===1?'транзакция':n>1&&n<5?'транзакции':'транзакций'); }
+
+  document.getElementById('cryptoBTC').textContent   = fmt(btcTotal);
+  document.getElementById('cryptoBTCsub').textContent  = txLabel(btcCount);
+  document.getElementById('cryptoLTC').textContent   = fmt(ltcTotal);
+  document.getElementById('cryptoLTCsub').textContent  = txLabel(ltcCount);
+  document.getElementById('cryptoUSDT').textContent  = fmt(usdtTotal);
+  document.getElementById('cryptoUSDTsub').textContent = txLabel(usdtCount);
+}
+
+// ── Server CSV loader ──────────────────────────────────────────────────────
+var SERVER_CSV_URLS = {
+  1: '/crs.csv',
+  2: '/crsi.csv',
+  3: '/umo.csv'
+};
+
+function loadServerCSV(num, btn) {
+  var url = SERVER_CSV_URLS[num];
+  var status = document.getElementById('serverLoadStatus');
+
+  // Visual — mark active button
+  var btns = document.querySelectorAll('#serverBtn1,#serverBtn2,#serverBtn3');
+  for (var i=0;i<btns.length;i++) btns[i].classList.remove('active');
+  btn.classList.add('active');
+
+  status.textContent = 'Загрузка ' + url + '...';
+  status.style.color = '#00b8ff';
+
+  fetch(url)
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    })
+    .then(function(text) {
+      status.textContent = 'CSV ' + num + ' загружен';
+      status.style.color = '#00e5a0';
+      parseIncomeCSV(text);
+    })
+    .catch(function(err) {
+      status.textContent = 'Ошибка: ' + err.message;
+      status.style.color = '#ff4560';
+      btn.classList.remove('active');
+      log('Не удалось загрузить ' + url + ': ' + err.message, 'err');
+    });
+}
+
+</script>
+
+</body>
